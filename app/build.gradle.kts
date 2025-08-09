@@ -62,9 +62,20 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Jetpack Compose setup
     implementation("androidx.compose.ui:ui:1.8.3")
     implementation("androidx.compose.material:material:1.8.3")
     implementation("androidx.compose.ui:ui-tooling-preview:1.8.3")
     implementation("androidx.activity:activity-compose:1.10.1")
 
+    // Router to navigate
+    val nav_version = "2.9.3"
+    implementation("androidx.navigation:navigation-compose:$nav_version")
+
+    // OkHTTPS client
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+
+    // JSON parser
+    implementation("com.google.code.gson:gson:2.11.0")
 }
