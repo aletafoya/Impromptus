@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+db.js
+package-lock.json
+package.json
+node_modules/

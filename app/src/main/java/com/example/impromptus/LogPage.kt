@@ -227,13 +227,14 @@ fun queryToEnter(username: String, password: String) : Boolean {
     return permission
 }
 
-fun queryToVerifyUniqueness(email: String, username: String) {
+fun queryToVerifyUniqueness(email: String, username: String) : Boolean{
     val client = OkHttpClient()
 
     val request = Request.Builder()
         .url("http://10.0.2.2:8080/uniqueRegistration?email=$email&username=$username")
         .build()
 
+    var permission = false
     CoroutineScope(Dispatchers.IO).launch {
         try {
             client.newCall(request).execute().use { response ->
@@ -256,6 +257,7 @@ fun queryToVerifyUniqueness(email: String, username: String) {
                         }
                     } else {
                         Log.e("RESPONSE", "Response body is null")
+                        permission = true
                     }
                 } else {
                     Log.e("RESPONSE", "Request failed with code ${response.code}")
@@ -266,4 +268,5 @@ fun queryToVerifyUniqueness(email: String, username: String) {
         }
     }
 
+    return permission
 }
