@@ -29,8 +29,14 @@ import okhttp3.Request
 import kotlinx.coroutines.*
 import java.io.IOException
 import android.util.Log
+import androidx.compose.foundation.content.MediaType
+import androidx.compose.material3.MaterialTheme
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.Dispatcher
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.MediaType.Companion.toMediaType
 
 @Composable
 fun LogPage(modifier: Modifier, navController: NavHostController) {
@@ -47,8 +53,14 @@ fun LogPage(modifier: Modifier, navController: NavHostController) {
 
 @Composable
 fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
-    var user by remember { mutableStateOf("") }
-    var pass by remember { mutableStateOf("") }
+    var user by remember { mutableStateOf("") } // String to retain the username on Text Field
+    var pass by remember { mutableStateOf("") } // String to retain the password on Text Field
+    var notCouple by remember { mutableStateOf(false) } // Variable to store if the password and username match
+    var usExists by remember { mutableStateOf(false) } // Variable to store if the username exists
+    var showMatch by remember { mutableStateOf(true) } // Variable to store if the password and username match
+    var showExists by remember { mutableStateOf(true) } // Variable to store if the username exists
+    var permission by remember { mutableStateOf(false) } // Variable to trigger the change of screen
+    var parameters by remember { mutableStateOf(true) } // Variable to store if the parameters are valid
 
     Box(
         modifier = Modifier
@@ -72,33 +84,92 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
                 )
 
                 TextField(
-                    value = user, onValueChange = { user = it },
+                    value = user, onValueChange = { user = it; showExists = true; showMatch = true },
                     label = { Text("Username", fontFamily = FontFamily.Monospace) },
                     modifier = Modifier
                         .padding(16.dp)
                         .align(Alignment.CenterHorizontally)
                 )
 
+                if(!showExists) {
+                    Text(
+                        "Username does not exist",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                }
+
                 TextField(
-                    value = pass, onValueChange = { pass = it },
+                    value = pass, onValueChange = { pass = it; showMatch = true; showExists = true },
                     label = { Text("Password", fontFamily = FontFamily.Monospace) },
                     modifier = Modifier
                         .padding(16.dp)
                         .align(Alignment.CenterHorizontally)
                 )
 
+                if(!parameters) {
+                    Text(
+                        "Parameters are required",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                }
+
                 Button(
                     onClick = {
                         Log.d("BUTTON", "Button clicked")
-                        val permission = queryToEnter(user, pass)
-
-                        if(permission) change(true)
-                    },
-                    modifier = androidx.compose.ui.Modifier
+                        if(user == "" || pass == "") {
+                            parameters = false
+                        }
+                        else {
+                            parameters = true
+                            queryToEnter(
+                                username = user,
+                                password = pass,
+                                granted = { newValue ->
+                                    permission = newValue
+                                    Log.d("OK", "Permission: $permission")
+                                    if (permission) {
+                                        Log.d("BUTTON", "Permission granted")
+                                        change(true)
+                                        showMatch = true
+                                        showExists = true
+                                    }
+                                  },
+                                match = { newValue -> notCouple = newValue
+                                    if(!notCouple) {
+                                        showMatch = false
+                                        showExists = true
+                                    }
+                                },
+                                exists = { newValue -> usExists = newValue
+                                    if(!usExists) {
+                                        showExists = false
+                                        showMatch = true
+                                     }
+                                    }
+                                )
+                            }
+                        },
+                    modifier = Modifier
                         .padding(16.dp)
                         .align(Alignment.CenterHorizontally)
                 ) {
                     Text("Login", fontFamily = FontFamily.Monospace)
+                }
+
+                if(!showMatch) {
+                    Text(
+                        "Password and username do not match",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .align(Alignment.CenterHorizontally)
+                    )
                 }
 
                 Text(
@@ -122,6 +193,14 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var confirmP by remember {mutableStateOf("") }
+    var showMatch by remember { mutableStateOf(true) }
+    var showExists by remember { mutableStateOf(true) }
+    var showUsed by remember { mutableStateOf(true)}
+    var blank by remember { mutableStateOf(false) }
+    var valid by remember { mutableStateOf(true) }
+    var enterEm by remember { mutableStateOf(true) }
+    var enterUs by remember { mutableStateOf(true) }
+    var permission by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -131,7 +210,7 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
     ) {
         Box(
             modifier = Modifier
-                .size(500.dp)
+                .size(600.dp)
                 .background(Color.White)
         ) {
             Column(
@@ -144,28 +223,138 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                 Text("Register", fontSize = 30.sp, fontFamily = FontFamily.Monospace)
 
                 TextField(
-                    value = mail, onValueChange = { mail = it },
+                    value = mail, onValueChange = { mail = it; showUsed = true; showExists = true; showMatch = true },
                     label = { Text("Email", fontFamily = FontFamily.Monospace) }
                 )
 
+                if(!enterEm) {
+                    Text(
+                        "Enter Email",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp))
+                }
+
+                if(!showUsed) {
+                    Text(
+                        "Email is already used",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp))
+                }
+
                 TextField(
-                    value = user, onValueChange = { user = it },
+                    value = user, onValueChange = { user = it; showUsed = true; showExists = true; showMatch = true },
                     label = { Text("Username", fontFamily = FontFamily.Monospace) }
                 )
 
+                if(!enterUs) {
+                    Text(
+                        "Enter Username",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                    )
+                }
+
+                if(!showExists) {
+                    Text(
+                        "Username is already used",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp))
+                }
+
                 TextField(
-                    value = pass, onValueChange = { pass = it },
+                    value = pass, onValueChange = { pass = it; showMatch = true; showExists = true; showUsed = true },
                     label = { Text("Password", fontFamily = FontFamily.Monospace) }
                 )
 
+                if(blank) {
+                    Text(
+                        "Password cannot be empty",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp))
+                }
+
                 TextField(
-                    value = confirmP, onValueChange = { confirmP = it },
+                    value = confirmP, onValueChange = { confirmP = it; showMatch = true; showExists = true; showUsed = true },
                     label = { Text("Confirm Password", fontFamily = FontFamily.Monospace) }
                 )
 
-                Button(onClick = { queryToVerifyUniqueness(mail, user) }, modifier = Modifier.padding(16.dp)) {
+                if(!valid) {
+                    Text(
+                        "Passwords does not match",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .padding(start = 16.dp))
+                }
+
+                Button(
+                    onClick = {
+                        // --- Stage 1: Client-side validation (synchronous) ---
+                        val currentPass = pass // Capture current values
+                        val currentConfirmP = confirmP
+                        val currentMail = mail
+                        val currentUser = user
+
+                        val isPassBlank = currentPass == ""
+                        val passwordsCurrentlyMatch = currentPass == currentConfirmP
+                        val isMailEmpty = currentMail == "" // Assuming enterEm was for this
+                        val isUserEmpty = currentUser == "" // Assuming enterUs was for this
+
+                        // Update UI for blank fields immediately
+                        blank = isPassBlank
+                        valid = passwordsCurrentlyMatch
+                        enterEm = !isMailEmpty
+                        enterUs = !isUserEmpty
+
+                        if (isPassBlank || !passwordsCurrentlyMatch || isMailEmpty || isUserEmpty) {
+                            Log.d("REG_VALIDATION", "Client-side validation failed. blank=$isPassBlank, match=$passwordsCurrentlyMatch, mailEmpty=$isMailEmpty, userEmpty=$isUserEmpty")
+                            // Optionally update showMatch here if passwords don't match, though it'll be checked again after API
+                            if (!passwordsCurrentlyMatch) showMatch = false else showMatch = true // For immediate feedback
+                        }
+
+                        // --- Stage 2: Server-side uniqueness check (asynchronous) ---
+                        Log.d("REG_BUTTON_CLICK", "Proceeding to queryToVerifyUniqueness")
+                        queryToVerifyUniqueness(
+                            currentMail,
+                            currentUser,
+                            emailExist = { isEmailAvailable ->
+                                Log.d("REG_LAMBDA", "emailExist (isEmailAvailable) called: $isEmailAvailable")
+                                // Update UI state for email uniqueness.
+                                // This will trigger recomposition.
+                                showUsed = !isEmailAvailable
+                            },
+                            usernameExist = { isUsernameAvailable ->
+                                Log.d("REG_LAMBDA", "usernameExist (isUsernameAvailable) called: $isUsernameAvailable")
+                                showExists = !isUsernameAvailable
+                            },
+                            access = { canProceedWithRegistration -> // This lambda means "email AND username are unique"
+                                Log.d("REG_LAMBDA", "access (canProceedWithRegistration) called with: $canProceedWithRegistration")
+
+                                val finalPasswordsMatch = currentPass == currentConfirmP
+                                showMatch = finalPasswordsMatch // Update UI for password match
+
+                                Log.d("REG_FINAL_CHECK", "canProceedWithRegistration=$canProceedWithRegistration, finalPasswordsMatch=$finalPasswordsMatch, !isPassBlank=${!isPassBlank}")
+
+                                if (canProceedWithRegistration && finalPasswordsMatch && !isPassBlank) {
+                                    Log.d("REG_SUCCESS", "All conditions met for registration.")
+                                    change(true) // Tell LogPage to navigate
+                                    queryToInsert(currentMail, currentUser, currentPass)
+                                } else {
+                                    Log.d("REG_FAIL",
+                                        "Registration failed after API check. canProceed=$canProceedWithRegistration, " +
+                                                "passMatch=$finalPasswordsMatch")
+                                }
+                            }
+                        )
+                    },
+                    modifier = Modifier.padding(16.dp)
+                ) {
                     Text("Register", fontFamily = FontFamily.Monospace)
                 }
+
 
                 Text(
                     "Already have an account?",
@@ -182,7 +371,8 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
 }
 
 // Client API
-fun queryToEnter(username: String, password: String) : Boolean {
+fun queryToEnter(username: String, password: String, granted: (Boolean) -> Unit, match: (Boolean) -> Unit,
+                 exists: (Boolean) -> Unit) {
     val client = OkHttpClient()
 
     val request = Request.Builder()
@@ -192,7 +382,6 @@ fun queryToEnter(username: String, password: String) : Boolean {
     // Coroutine (second thread) to make a request to the server,
     // this allow us to not block the main thread and the UI,
     // thus, we avoid the "App is not responding" error
-    var permission = false
     CoroutineScope(Dispatchers.IO).launch {
             // Dispatchers IO means:
         // “Run this work on a background thread pool optimized for disk/network I/O.”
@@ -200,19 +389,36 @@ fun queryToEnter(username: String, password: String) : Boolean {
             client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     val body = response.body?.string()
-                    // This is shown on the logcat
-                    Log.d("RESPONSE", body.toString())
 
-                    if(body != null) {
+                    if(body.toString() != "null") {
                         // Using GSON library to create an object and parse the JSON
                         val gson = Gson()
                         val user : UserStructure = gson.fromJson(body, UserStructure::class.java)
 
-                        permission = password == user.password_hash
+                        if(user.password_hash == password) {
+                            Log.d("RESPONSE", "Password match")
+                            withContext(Dispatchers.Main) {
+                                granted(true)
+                                exists(true)
+                                match(true)
+                            }
+                        }
+                        else {
+                            // this return to the main thread to make this a priority task
+                            withContext(Dispatchers.Main) {
+                                granted(false)
+                                exists(true)
+                                match(false)
+                            }
+                        }
 
                         return@launch
-
                     } else {
+                        withContext(Dispatchers.Main) {
+                            granted(false)
+                            exists(false)
+                            match(true)
+                        }
                         Log.e("RESPONSE", "Response body is null")
                     }
                 } else {
@@ -223,25 +429,29 @@ fun queryToEnter(username: String, password: String) : Boolean {
             e.printStackTrace()
         }
     }
-
-    return permission
 }
 
-fun queryToVerifyUniqueness(email: String, username: String) : Boolean{
+// Function to verify if the username and email are already used and the form
+// is valid
+fun queryToVerifyUniqueness(email: String, username: String, emailExist: (Boolean) -> Unit,
+                           usernameExist: (Boolean) -> Unit, access: (Boolean) -> Unit) {
+    // Client
     val client = OkHttpClient()
 
+    // Request to the server
     val request = Request.Builder()
         .url("http://10.0.2.2:8080/uniqueRegistration?email=$email&username=$username")
         .build()
 
-    var permission = false
     CoroutineScope(Dispatchers.IO).launch {
         try {
             client.newCall(request).execute().use { response ->
                 if(response.isSuccessful) {
                     val body = response.body?.string()
+                    var foundEmail = false
+                    var foundUsername = false
 
-                    if(body != null) {
+                    if(body.toString() != "null") {
                         Log.d("Response", body.toString())
 
                         val gson = Gson()
@@ -253,11 +463,21 @@ fun queryToVerifyUniqueness(email: String, username: String) : Boolean{
 
                         // Example: log each username
                         for (user in users) {
-                            Log.d("USER", "Username: ${user.username}, Pass: ${user.password_hash}")
+                            if(user.email == email) foundEmail = true
+                            if(user.username == username) foundUsername = true
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            if(foundEmail) emailExist(false)
+                            else emailExist(true)
+                            if(foundUsername) usernameExist(false)
+                            else usernameExist(true)
                         }
                     } else {
-                        Log.e("RESPONSE", "Response body is null")
-                        permission = true
+                        withContext(Dispatchers.Main) {
+                            access(true)
+                        }
+                        Log.e("UNIQUE USER", "NO USERS FOUND")
                     }
                 } else {
                     Log.e("RESPONSE", "Request failed with code ${response.code}")
@@ -268,5 +488,38 @@ fun queryToVerifyUniqueness(email: String, username: String) : Boolean{
         }
     }
 
-    return permission
+}
+
+// Function to trigger the API request
+fun queryToInsert(email: String, username: String, password: String) {
+    val client = OkHttpClient()
+
+    val jsonFormat = """
+        {
+            "email": "$email",
+            "username": "$username",
+            "password": "$password"
+        }
+    """.trimIndent()
+
+    val requestBody = jsonFormat.toRequestBody("application/json".toMediaType())
+    // Request to the server
+    val request = Request.Builder()
+        .url("http://10.0.2.2:8080/newUser")
+        .post(requestBody)
+        .build()
+
+    // Same secondary Thread
+    CoroutineScope(Dispatchers.IO).launch {
+        // Execution of the request
+        client.newCall(request).execute().use { response ->
+            if(response.isSuccessful) {
+                val body = response.body?.string()
+                Log.d("RESPONSE", "User inserted")
+                Log.d("JSON FROM API", body.toString())
+            } else {
+                Log.e("NOT_INSERTED", "Request failed with code ${response.code}")
+            }
+        }
+    }
 }

@@ -1,7 +1,12 @@
 const express = require("express"); // Importing express for creating the server
 const db = require("./db"); // Importing the database connection module
+const cors = require("cors"); // Importing CORS for handling cross-origin requests
 const app = express(); // Creating an instance of express
 const PORT = 8080;
+
+app.use(cors()); // Enabling CORS for all routes
+app.use(express.json()); // Middleware to parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
 
 // Single request for user when Logging in
 app.get("/user", async (req, res) => {
@@ -39,6 +44,27 @@ app.get("/uniqueRegistration", async (req, res) => {
         if(rows.length > 0) res.json({ data : rows });
         else res.json(null);
     } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Request to insert new user
+app.post("/newUser", async (req, res) => {
+    const {email, username, password} = req.body;
+
+    if (!email || !username || !password) {
+        return res.status(400).json({ error: "Parameters required" });
+    }
+
+    try {
+        // Simple query to insert a new user
+        const [rows] = await db.query("INSERT INTO user (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
+            [username, email, password, "user"]);
+        
+        res.json({ success: true, insertId: rows.insertId });
+    }
+    catch(err) {
         console.error(err);
         res.status(500).json({ error: "Internal Server Error" });
     }

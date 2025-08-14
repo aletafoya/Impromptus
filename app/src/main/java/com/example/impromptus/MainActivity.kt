@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.impromptus.LogPage
+import com.example.impromptus.Dashboard
 import androidx.compose.ui.Modifier
 
 class MainActivity : ComponentActivity() {
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
                         LogPage(Modifier, navController)
                     }
                     composable(Routes.dashboard) {
-
+                        Dashboard(Modifier, navController)
                     }
                 }
             )
