@@ -29,6 +29,7 @@ import okhttp3.Request
 import kotlinx.coroutines.*
 import java.io.IOException
 import android.util.Log
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import com.google.gson.Gson
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -61,7 +62,7 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Gray),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -115,7 +116,7 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
                     )
                 }
 
-                Button(
+                ElevatedButton (
                     onClick = {
                         Log.d("BUTTON", "Button clicked")
                         if(user == "" || pass == "") {
@@ -196,12 +197,11 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
     var valid by remember { mutableStateOf(true) }
     var enterEm by remember { mutableStateOf(true) }
     var enterUs by remember { mutableStateOf(true) }
-    var permission by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Gray),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -286,7 +286,7 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                             .padding(start = 16.dp))
                 }
 
-                Button(
+                ElevatedButton (
                     onClick = {
                         // --- Stage 1: Client-side validation (synchronous) ---
                         val currentPass = pass // Capture current values
