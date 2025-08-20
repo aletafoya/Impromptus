@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.datastore.core.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -78,4 +79,11 @@ dependencies {
 
     // JSON parser
     implementation("com.google.code.gson:gson:2.11.0")
+
+    // Preferences for local storage
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+
+    // Support for coroutines
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+
 }

@@ -1,5 +1,6 @@
 package com.example.impromptus
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -31,12 +31,24 @@ import java.io.IOException
 import android.util.Log
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.LocalContext
 import com.google.gson.Gson
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.edit
+
+val USER_TOKEN = stringPreferencesKey("user_token")
+
+// Suspend function (idle thread) to store the token
+suspend fun storeData(context: Context, token: String) {
+    context.dataStore.edit { pref ->
+        pref[USER_TOKEN] = token
+    }
+}
 
 @Composable
-fun LogPage(modifier: Modifier, navController: NavHostController) {
+fun LogPage(navController: NavHostController) {
     var showRegister by remember { mutableStateOf(false) }
     var permissionToAccess by remember { mutableStateOf(false) }
 
@@ -50,6 +62,9 @@ fun LogPage(modifier: Modifier, navController: NavHostController) {
 
 @Composable
 fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
+    // Local context for the composable
+    val context = LocalContext.current
+
     var user by remember { mutableStateOf("") } // String to retain the username on Text Field
     var pass by remember { mutableStateOf("") } // String to retain the password on Text Field
     var notCouple by remember { mutableStateOf(false) } // Variable to store if the password and username match
@@ -132,6 +147,10 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
                                     Log.d("OK", "Permission: $permission")
                                     if (permission) {
                                         Log.d("BUTTON", "Permission granted")
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            storeData(context, user)
+                                        }
+
                                         change(true)
                                         showMatch = true
                                         showExists = true
@@ -186,6 +205,8 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
 
 @Composable
 fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
+    // The context of the composable is local
+    val context = LocalContext.current
     var mail by remember {mutableStateOf("") }
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -296,8 +317,8 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
 
                         val isPassBlank = currentPass == ""
                         val passwordsCurrentlyMatch = currentPass == currentConfirmP
-                        val isMailEmpty = currentMail == "" // Assuming enterEm was for this
-                        val isUserEmpty = currentUser == "" // Assuming enterUs was for this
+                        val isMailEmpty = currentMail == ""
+                        val isUserEmpty = currentUser == ""
 
                         // Update UI for blank fields immediately
                         blank = isPassBlank
@@ -307,8 +328,7 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
 
                         if (isPassBlank || !passwordsCurrentlyMatch || isMailEmpty || isUserEmpty) {
                             Log.d("REG_VALIDATION", "Client-side validation failed. blank=$isPassBlank, match=$passwordsCurrentlyMatch, mailEmpty=$isMailEmpty, userEmpty=$isUserEmpty")
-                            // Optionally update showMatch here if passwords don't match, though it'll be checked again after API
-                            if (!passwordsCurrentlyMatch) showMatch = false else showMatch = true // For immediate feedback
+                            if (!passwordsCurrentlyMatch) showMatch = false else showMatch = true
                         }
 
                         // --- Stage 2: Server-side uniqueness check (asynchronous) ---
@@ -336,6 +356,11 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
 
                                 if (canProceedWithRegistration && finalPasswordsMatch && !isPassBlank) {
                                     Log.d("REG_SUCCESS", "All conditions met for registration.")
+
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        storeData(context, user)
+                                    }
+
                                     change(true) // Tell LogPage to navigate
                                     queryToInsert(currentMail, currentUser, currentPass)
                                 } else {
@@ -375,7 +400,7 @@ fun queryToEnter(username: String, password: String, granted: (Boolean) -> Unit,
         .url("http://10.0.2.2:8080/user?username=$username")
         .build()
 
-    // Coroutine (second thread) to make a request to the server,
+    // Coroutine (asynchronous thread) to make a request to the server,
     // this allow us to not block the main thread and the UI,
     // thus, we avoid the "App is not responding" error
     CoroutineScope(Dispatchers.IO).launch {

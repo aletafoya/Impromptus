@@ -12,10 +12,13 @@ val Pink40 = Color(0xFF7D5260)
 
 // Darker colors
 val Yellow80 = Color(137, 140, 83)
-val YellowGrey80 = Color(127, 130, 92)
+val YellowGrey80 = Color(235, 236, 229, 255)
 val Black80 = Color(89, 89, 74)
 
-// Lighter colors
+// Header
+val YellowHeader = Color(220, 215, 204, 255)
+
+// Colors
 val Yellow40 = Color(201, 201, 115)
-val YellowGrey40 = Color(194, 194, 149)
+val YellowGrey40 = Color(59, 55, 47, 255)
 val Black40 = Color(171, 171, 150)

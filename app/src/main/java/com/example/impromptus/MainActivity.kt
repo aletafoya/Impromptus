@@ -1,5 +1,6 @@
 package com.example.impromptus
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,7 +10,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.impromptus.LogPage
 import com.example.impromptus.Dashboard
-import androidx.compose.ui.Modifier
 import com.example.impromptus.ui.theme.ImpromptusTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,10 +21,10 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     NavHost(navController = navController, startDestination = Routes.dashboard, builder = {
                         composable(Routes.logPage) {
-                            LogPage(Modifier, navController)
+                            LogPage(navController)
                         }
                         composable(Routes.dashboard) {
-                            Dashboard(Modifier, navController)
+                            Dashboard(navController, "")
                         }
                     }
                 )

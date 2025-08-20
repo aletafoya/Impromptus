@@ -16,14 +16,14 @@ private val DarkColorScheme = darkColorScheme(
     primary = Yellow80,
     secondary = YellowGrey80,
     tertiary = Black80,
-    background = Color.Blue
+    background = YellowHeader
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = Yellow40,
     secondary = YellowGrey40,
     tertiary = Black40,
-    background = Color.Blue
+    background = YellowHeader
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),
@@ -39,7 +39,7 @@ private val LightColorScheme = lightColorScheme(
 fun ImpromptusTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

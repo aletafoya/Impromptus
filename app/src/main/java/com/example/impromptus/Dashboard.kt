@@ -9,11 +9,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.background
+import android.content.Context
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+// Function to retrieve the username stored on the LogPage file
+fun retrieveData(context: Context): Flow<String?> {
+    return context.dataStore.data.map { prefs ->
+        prefs[USER_TOKEN]
+    }
+}
 
 @Composable
-fun Dashboard(modifier: Modifier = Modifier, navController: NavHostController) {
+fun Dashboard(navController: NavHostController, username: String) {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
@@ -30,13 +40,13 @@ fun Dashboard(modifier: Modifier = Modifier, navController: NavHostController) {
                     .fillMaxWidth()
                     .height(120.dp)
                     .background(
-                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Dashboard",
+                    text = "Welcome, $username!",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.secondary
                 )
