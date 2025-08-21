@@ -12,20 +12,37 @@ import androidx.compose.foundation.background
 import android.content.Context
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-
+import androidx.datastore.preferences.core.Preferences
+import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 // Function to retrieve the username stored on the LogPage file
-fun retrieveData(context: Context): Flow<String?> {
-    return context.dataStore.data.map { prefs ->
-        prefs[USER_TOKEN]
+fun retrieveData(context: Context): Flow<String> {
+    return context.dataStore.data.map { pref: Preferences ->
+        pref[USER_TOKEN] ?: ""
     }
 }
 
 @Composable
 fun Dashboard(navController: NavHostController, username: String) {
+    var user by remember { mutableStateOf(username) }
+    val context = LocalContext.current
+
+    LaunchedEffect(key1 = context) {
+        retrieveData(context).collect { token ->
+            user = if (token.isNotBlank()) token else "Guest"
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+
     ) {
         Column(
             modifier = Modifier
@@ -46,7 +63,7 @@ fun Dashboard(navController: NavHostController, username: String) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Welcome, $username!",
+                    text = "Welcome, $user!",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -61,7 +78,7 @@ fun Dashboard(navController: NavHostController, username: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ElevatedButton(
-                    onClick = { navController.navigate(Routes.courses) },
+                    onClick = { Log.d("See", user) },
                     modifier = Modifier
                         .weight(1f)
                         .height(60.dp),

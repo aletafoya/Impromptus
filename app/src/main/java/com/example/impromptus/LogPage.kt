@@ -31,6 +31,7 @@ import java.io.IOException
 import android.util.Log
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.google.gson.Gson
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -64,7 +65,8 @@ fun LogPage(navController: NavHostController) {
 fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
     // Local context for the composable
     val context = LocalContext.current
-
+    // Scope for coroutines
+    val scope = rememberCoroutineScope()
     var user by remember { mutableStateOf("") } // String to retain the username on Text Field
     var pass by remember { mutableStateOf("") } // String to retain the password on Text Field
     var notCouple by remember { mutableStateOf(false) } // Variable to store if the password and username match
@@ -147,7 +149,7 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
                                     Log.d("OK", "Permission: $permission")
                                     if (permission) {
                                         Log.d("BUTTON", "Permission granted")
-                                        CoroutineScope(Dispatchers.IO).launch {
+                                        scope.launch(Dispatchers.IO) {
                                             storeData(context, user)
                                         }
 
@@ -207,6 +209,8 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
 fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
     // The context of the composable is local
     val context = LocalContext.current
+    // Scope for coroutines
+    val scope = rememberCoroutineScope()
     var mail by remember {mutableStateOf("") }
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -357,7 +361,7 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                                 if (canProceedWithRegistration && finalPasswordsMatch && !isPassBlank) {
                                     Log.d("REG_SUCCESS", "All conditions met for registration.")
 
-                                    CoroutineScope(Dispatchers.IO).launch {
+                                    scope.launch(Dispatchers.IO) {
                                         storeData(context, user)
                                     }
 
