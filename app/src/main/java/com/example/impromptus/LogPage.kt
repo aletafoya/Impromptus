@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.border
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,8 +30,14 @@ import okhttp3.Request
 import kotlinx.coroutines.*
 import java.io.IOException
 import android.util.Log
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicSecureTextField
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.google.gson.Gson
@@ -38,6 +45,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 
 val USER_TOKEN = stringPreferencesKey("user_token")
 
@@ -67,8 +78,8 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
     val context = LocalContext.current
     // Scope for coroutines
     val scope = rememberCoroutineScope()
-    var user by remember { mutableStateOf("") } // String to retain the username on Text Field
-    var pass by remember { mutableStateOf("") } // String to retain the password on Text Field
+    val user = remember { TextFieldState("") } // String to retain the username on Text Field
+    val state = remember { TextFieldState("") } // String to retain the password on Text Field
     var notCouple by remember { mutableStateOf(false) } // Variable to store if the password and username match
     var usExists by remember { mutableStateOf(false) } // Variable to store if the username exists
     var showMatch by remember { mutableStateOf(true) } // Variable to store if the password and username match
@@ -76,6 +87,8 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
     var permission by remember { mutableStateOf(false) } // Variable to trigger the change of screen
     var parameters by remember { mutableStateOf(true) } // Variable to store if the parameters are valid
 
+    // Showing password
+    var showPassword by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -97,13 +110,25 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
                         .align(Alignment.CenterHorizontally)
                 )
 
-                TextField(
-                    value = user, onValueChange = { user = it; showExists = true; showMatch = true },
-                    label = { Text("Username", fontFamily = FontFamily.Monospace) },
+                // Foundation too
+                BasicTextField(
+                    state = user,
                     modifier = Modifier
                         .padding(16.dp)
                         .align(Alignment.CenterHorizontally)
+                        .border(1.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(16.dp)),
+                    decorator = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp)
+                            ) {
+                                innerTextField()
+                            }
+                        }
+                    }
                 )
+
 
                 if(!showExists) {
                     Text(
@@ -115,12 +140,39 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
                     )
                 }
 
-                TextField(
-                    value = pass, onValueChange = { pass = it; showMatch = true; showExists = true },
-                    label = { Text("Password", fontFamily = FontFamily.Monospace) },
+                // Foundation level Composable, very basic and low, allows me to edit it and change
+                // the design.
+                BasicSecureTextField(
+                    state = state,
+                    textObfuscationMode =
+                        if (showPassword) {
+                            TextObfuscationMode.Visible
+                        } else {
+                            TextObfuscationMode.RevealLastTyped
+                        },
                     modifier = Modifier
                         .padding(16.dp)
                         .align(Alignment.CenterHorizontally)
+                        .border(1.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(16.dp)),
+                    decorator = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(16.dp)
+                            ) {
+                                innerTextField()
+                            }
+                            ElevatedButton(
+                                onClick = { showPassword = !showPassword },
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 16.dp)
+                            ) {
+                                Text(if (showPassword) "Hide" else "Show")
+                            }
+                        }
+                    }
                 )
 
                 if(!parameters) {
@@ -135,22 +187,24 @@ fun Login(reg: () -> Unit, change: (Boolean) -> Unit) {
 
                 ElevatedButton (
                     onClick = {
-                        Log.d("BUTTON", "Button clicked")
-                        if(user == "" || pass == "") {
+                        Log.d("BUTTON", state.text.toString())
+                        // The format of the variable user is:
+                        // TextField(..., Text="username")
+                        if(user.text.toString() == "" || state.text.toString() == "") {
                             parameters = false
                         }
                         else {
                             parameters = true
                             queryToEnter(
-                                username = user,
-                                password = pass,
+                                username = user.text.toString(),
+                                password = state.text.toString(),
                                 granted = { newValue ->
                                     permission = newValue
                                     Log.d("OK", "Permission: $permission")
                                     if (permission) {
                                         Log.d("BUTTON", "Permission granted")
                                         scope.launch(Dispatchers.IO) {
-                                            storeData(context, user)
+                                            storeData(context, user.toString())
                                         }
 
                                         change(true)
@@ -211,10 +265,10 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
     val context = LocalContext.current
     // Scope for coroutines
     val scope = rememberCoroutineScope()
-    var mail by remember {mutableStateOf("") }
-    var user by remember { mutableStateOf("") }
-    var pass by remember { mutableStateOf("") }
-    var confirmP by remember {mutableStateOf("") }
+    val mail = remember { TextFieldState("") }
+    val user = remember { TextFieldState("") }
+    val pass = remember { TextFieldState("") }
+    val confirmP = remember { TextFieldState("") }
     var showMatch by remember { mutableStateOf(true) }
     var showExists by remember { mutableStateOf(true) }
     var showUsed by remember { mutableStateOf(true)}
@@ -223,6 +277,8 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
     var enterEm by remember { mutableStateOf(true) }
     var enterUs by remember { mutableStateOf(true) }
 
+    var showPassword1 by remember { mutableStateOf(false) }
+    var showPassword2 by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -243,10 +299,24 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
             ) {
                 Text("Register", fontSize = 30.sp, fontFamily = FontFamily.Monospace)
 
-                TextField(
-                    value = mail, onValueChange = { mail = it; showUsed = true; showExists = true; showMatch = true },
-                    label = { Text("Email", fontFamily = FontFamily.Monospace) }
+                BasicTextField(
+                    state = mail,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .border(1.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(16.dp)),
+                    decorator = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp)
+                            ) {
+                                innerTextField()
+                            }
+                        }
+                    }
                 )
+
 
                 if(!enterEm) {
                     Text(
@@ -264,9 +334,22 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                             .padding(start = 16.dp))
                 }
 
-                TextField(
-                    value = user, onValueChange = { user = it; showUsed = true; showExists = true; showMatch = true },
-                    label = { Text("Username", fontFamily = FontFamily.Monospace) }
+                BasicTextField(
+                    state = user,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .border(1.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(16.dp)),
+                    decorator = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp)
+                            ) {
+                                innerTextField()
+                            }
+                        }
+                    }
                 )
 
                 if(!enterUs) {
@@ -285,9 +368,37 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                             .padding(start = 16.dp))
                 }
 
-                TextField(
-                    value = pass, onValueChange = { pass = it; showMatch = true; showExists = true; showUsed = true },
-                    label = { Text("Password", fontFamily = FontFamily.Monospace) }
+                BasicSecureTextField(
+                    state = pass,
+                    textObfuscationMode =
+                        if (showPassword1) {
+                            TextObfuscationMode.Visible
+                        } else {
+                            TextObfuscationMode.RevealLastTyped
+                        },
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .border(1.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(16.dp)),
+                    decorator = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(16.dp)
+                            ) {
+                                innerTextField()
+                            }
+                            ElevatedButton(
+                                onClick = { showPassword1 = !showPassword1 },
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 16.dp)
+                            ) {
+                                Text(if (showPassword1) "Hide" else "Show")
+                            }
+                        }
+                    }
                 )
 
                 if(blank) {
@@ -298,9 +409,37 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                             .padding(start = 16.dp))
                 }
 
-                TextField(
-                    value = confirmP, onValueChange = { confirmP = it; showMatch = true; showExists = true; showUsed = true },
-                    label = { Text("Confirm Password", fontFamily = FontFamily.Monospace) }
+                BasicSecureTextField(
+                    state = confirmP,
+                    textObfuscationMode =
+                        if (showPassword2) {
+                            TextObfuscationMode.Visible
+                        } else {
+                            TextObfuscationMode.RevealLastTyped
+                        },
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .border(1.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(16.dp)),
+                    decorator = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(16.dp)
+                            ) {
+                                innerTextField()
+                            }
+                            ElevatedButton(
+                                onClick = { showPassword2 = !showPassword2 },
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 16.dp)
+                            ) {
+                                Text(if (showPassword2) "Hide" else "Show")
+                            }
+                        }
+                    }
                 )
 
                 if(!valid) {
@@ -314,10 +453,10 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                 ElevatedButton (
                     onClick = {
                         // --- Stage 1: Client-side validation (synchronous) ---
-                        val currentPass = pass // Capture current values
-                        val currentConfirmP = confirmP
-                        val currentMail = mail
-                        val currentUser = user
+                        val currentPass = pass.text.toString() // Capture current values
+                        val currentConfirmP = confirmP.text.toString()
+                        val currentMail = mail.text.toString()
+                        val currentUser = user.text.toString()
 
                         val isPassBlank = currentPass == ""
                         val passwordsCurrentlyMatch = currentPass == currentConfirmP
@@ -362,7 +501,7 @@ fun Reg(back: () -> Unit, change: (Boolean) -> Unit) {
                                     Log.d("REG_SUCCESS", "All conditions met for registration.")
 
                                     scope.launch(Dispatchers.IO) {
-                                        storeData(context, user)
+                                        storeData(context, user.text.toString())
                                     }
 
                                     change(true) // Tell LogPage to navigate
